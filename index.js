@@ -2,6 +2,18 @@ require("dotenv").config();
 const { Telegraf } = require("telegraf");
 const fs = require("fs");
 const path = require("path");
+const http = require("http");
+
+const PORT = process.env.PORT || 3000;
+
+http
+  .createServer((req, res) => {
+    res.writeHead(200);
+    res.end("OK");
+  })
+  .listen(PORT, () => {
+    console.log(`HTTP server is listening on port ${PORT}`);
+  });
 
 const RESPONSES_FILE = path.join(__dirname, "responses.json");
 
