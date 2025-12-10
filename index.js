@@ -1,19 +1,19 @@
-require('dotenv').config();
-const { Telegraf } = require('telegraf');
-const fs = require('fs');
-const path = require('path');
+require("dotenv").config();
+const { Telegraf } = require("telegraf");
+const fs = require("fs");
+const path = require("path");
 
-const RESPONSES_FILE = path.join(__dirname, 'responses.json');
+const RESPONSES_FILE = path.join(__dirname, "responses.json");
 
 function loadResponses() {
   try {
     if (!fs.existsSync(RESPONSES_FILE)) {
       fs.writeFileSync(RESPONSES_FILE, JSON.stringify([]));
     }
-    const data = fs.readFileSync(RESPONSES_FILE, 'utf8');
+    const data = fs.readFileSync(RESPONSES_FILE, "utf8");
     return JSON.parse(data);
   } catch (err) {
-    console.error('Ошибка чтения responses.json', err);
+    console.error("Ошибка чтения responses.json", err);
     return [];
   }
 }
@@ -37,15 +37,15 @@ const userTimers = new Map();
  */
 async function sendCheckIn(chatId) {
   const text = [
-    '🌿 Пауза заботы о себе 🌿',
-    '',
-    '1) Что я сейчас чувствую телом?',
-    '2) Где моё внимание?',
-    '3) Что мне сейчас нужно? (дыхание, вода, пауза, движение, нежность, что-то ещё)',
-    '4) Что хорошего произошло?',
-    '',
-    'Ответь просто одним сообщением — как есть, без цензуры 💚'
-  ].join('\n');
+    "🌿 Пауза заботы о себе 🌿",
+    "",
+    "1) Что я сейчас чувствую телом?",
+    "2) Где моё внимание?",
+    "3) Что мне сейчас нужно? (дыхание, вода, пауза, движение, нежность, что-то ещё)",
+    "4) Что хорошего произошло?",
+    "",
+    "Ответь просто одним сообщением — как есть, без цензуры 💚",
+  ].join("\n");
 
   await bot.telegram.sendMessage(chatId, text);
 }
@@ -83,22 +83,22 @@ bot.start((ctx) => {
   const chatId = ctx.chat.id;
 
   ctx.reply(
-    'Привет, Света 🌸\n' +
-    'Я — твой бот возвращения фокуса к себе.\n\n' +
-    'Я буду периодически напоминать тебе задать себе 4 вопроса.\n' +
-    'Чтобы включить напоминания, я уже всё запустила ✅\n\n' +
-    'Если захочешь остановить — напиши /stop.'
+    "Привет, Света 🌸\n" +
+      "Я — твой бот возвращения фокуса к себе.\n\n" +
+      "Я буду периодически напоминать тебе задать себе 4 вопроса.\n" +
+      "Чтобы включить напоминания, я уже всё запустила ✅\n\n" +
+      "Если захочешь остановить — напиши /stop."
   );
 
   startReminders(chatId);
 });
 
-bot.command('stats', (ctx) => {
+bot.command("stats", (ctx) => {
   const all = loadResponses();
   const now = Date.now();
   const weekAgo = now - 7 * 24 * 60 * 60 * 1000;
 
-  const recent = all.filter(r => {
+  const recent = all.filter((r) => {
     const t = new Date(r.timestamp).getTime();
     return t >= weekAgo;
   });
@@ -107,24 +107,51 @@ bot.command('stats', (ctx) => {
 
   ctx.reply(
     `🌿 Статистика за последние 7 дней 🌿\n\n` +
-    `Ты ответила мне *${count} раз*. \n\n` +
-    (count === 0
-      ? `Твоё внимание скучало по тебе... 💛`
-      : `Горжусь тобой, Светик 💚 Продолжай заботиться о себе так же нежно!`)
+      `Ты ответила мне *${count} раз*. \n\n` +
+      (count === 0
+        ? `Твоё внимание скучало по тебе... 💛`
+        : `Горжусь тобой, Светик 💚 Продолжай заботиться о себе так же нежно!`)
   );
 });
 
+bot.command("last", (ctx) => {
+  const all = loadResponses();
+
+  if (all.length === 0) {
+    ctx.reply(
+      "Пока в дневнике пусто 🌱 Но это легко исправить — просто ответь на мой следующий чек-ин 💚"
+    );
+    return;
+  }
+
+  const recent = all.slice(-10);
+  const lines = recent.map((r, index) => {
+    const date = new Date(r.timestamp);
+    const timeStr = date.toLocaleString("ru-RU", {
+      timeZone: "Europe/Tallinn",
+    });
+
+    return `${index + 1}) ${timeStr}\n${r.message}`;
+  });
+
+  const text =
+    "📝 Последние записи в дневнике заботы:\n\n" + lines.join("\n\n");
+
+  ctx.reply(text);
+});
 
 // команда /stop
-bot.command('stop', (ctx) => {
+bot.command("stop", (ctx) => {
   const chatId = ctx.chat.id;
 
   stopReminders(chatId);
-  ctx.reply('Окей 💙 Я временно замолкаю. Когда захочешь снова напоминаний — напиши /start.');
+  ctx.reply(
+    "Окей 💙 Я временно замолкаю. Когда захочешь снова напоминаний — напиши /start."
+  );
 });
 
 // просто на всякий случай обработка обычных сообщений
-bot.on('text', (ctx) => {
+bot.on("text", (ctx) => {
   const chatId = ctx.chat.id;
   const message = ctx.message.text;
   const timestamp = new Date().toISOString();
@@ -132,18 +159,17 @@ bot.on('text', (ctx) => {
   saveResponse({
     chatId,
     message,
-    timestamp
+    timestamp,
   });
 
-  ctx.reply('Я с тобой 💚 Твой ответ записан в дневник заботы.');
+  ctx.reply("Я с тобой 💚 Твой ответ записан в дневник заботы.");
 });
-
 
 // запуск бота
 bot.launch().then(() => {
-  console.log('Bot is running...');
+  console.log("Bot is running...");
 });
 
 // корректное завершение (Ctrl+C и т.п.)
-process.once('SIGINT', () => bot.stop('SIGINT'));
-process.once('SIGTERM', () => bot.stop('SIGTERM'));
+process.once("SIGINT", () => bot.stop("SIGINT"));
+process.once("SIGTERM", () => bot.stop("SIGTERM"));
