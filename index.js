@@ -28,12 +28,11 @@ const bot = new Telegraf(process.env.BOT_TOKEN);
 
 // интервал между напоминаниями (3 часа)
 const INTERVAL_MS = 3 * 60 * 60 * 1000;
-// для тестов можешь сначала поставить, например, 60 * 1000 (1 минута)
 
 const userTimers = new Map();
 
 /**
- * Шлём три вопроса
+ * Шлём вопросы
  */
 async function sendCheckIn(chatId) {
   const text = [
@@ -54,10 +53,7 @@ async function sendCheckIn(chatId) {
  * Запускаем напоминания для конкретного чата
  */
 function startReminders(chatId) {
-  // если уже есть таймер — очищаем
   stopReminders(chatId);
-
-  // сразу отправим первый чек-ин
   sendCheckIn(chatId).catch(console.error);
 
   const timer = setInterval(() => {
@@ -78,7 +74,7 @@ function stopReminders(chatId) {
   }
 }
 
-// команда /start
+// /start
 bot.start((ctx) => {
   const chatId = ctx.chat.id;
 
@@ -93,6 +89,7 @@ bot.start((ctx) => {
   startReminders(chatId);
 });
 
+// /stats — сколько ответов за 7 дней
 bot.command("stats", (ctx) => {
   const all = loadResponses();
   const now = Date.now();
@@ -106,14 +103,15 @@ bot.command("stats", (ctx) => {
   const count = recent.length;
 
   ctx.reply(
-    `🌿 Статистика за последние 7 дней 🌿\n\n` +
-      `Ты ответила мне *${count} раз*. \n\n` +
+    "🌿 Статистика за последние 7 дней 🌿\n\n" +
+      `Ты ответила мне ${count} раз.\n\n` +
       (count === 0
-        ? `Твоё внимание скучало по тебе... 💛`
-        : `Горжусь тобой, Светик 💚 Продолжай заботиться о себе так же нежно!`)
+        ? "Твоё внимание скучало по тебе... 💛"
+        : "Горжусь тобой, Светик 💚 Продолжай заботиться о себе так же нежно!")
   );
 });
 
+// /last — последние 10 записей
 bot.command("last", (ctx) => {
   const all = loadResponses();
 
@@ -127,30 +125,26 @@ bot.command("last", (ctx) => {
   const recent = all.slice(-10);
   const lines = recent.map((r, index) => {
     const date = new Date(r.timestamp);
-    const timeStr = date.toLocaleString("ru-RU", {
-      timeZone: "Europe/Tallinn",
-    });
+    const timeStr = date.toLocaleString("ru-RU"); // без таймзоны, чтобы точно не упасть
 
     return `${index + 1}) ${timeStr}\n${r.message}`;
   });
 
   const text =
     "📝 Последние записи в дневнике заботы:\n\n" + lines.join("\n\n");
-
   ctx.reply(text);
 });
 
-// команда /stop
+// /stop
 bot.command("stop", (ctx) => {
   const chatId = ctx.chat.id;
-
   stopReminders(chatId);
   ctx.reply(
     "Окей 💙 Я временно замолкаю. Когда захочешь снова напоминаний — напиши /start."
   );
 });
 
-// просто на всякий случай обработка обычных сообщений
+// обработка обычных сообщений
 bot.on("text", (ctx) => {
   const chatId = ctx.chat.id;
   const message = ctx.message.text;
@@ -166,10 +160,14 @@ bot.on("text", (ctx) => {
 });
 
 // запуск бота
-bot.launch().then(() => {
-  console.log("Bot is running...");
+bot.launch().catch((err) => {
+  console.error("❌ Ошибка при запуске бота:");
+  console.error(err);
+  process.exit(1);
 });
 
-// корректное завершение (Ctrl+C и т.п.)
+console.log("🚀 Bot is running...");
+
+// корректное завершение
 process.once("SIGINT", () => bot.stop("SIGINT"));
 process.once("SIGTERM", () => bot.stop("SIGTERM"));
